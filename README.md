@@ -118,4 +118,4 @@ SELECT number, qr_token FROM tables;
 
 ## 👤 Autor
 
-**Rodrigo Nieva** — [@rodrosn0w](https://github.com/rodrosn0w)
+**Rodrigo Nieva** — [@nievarodrigo](https://github.com/nievarodrigo)

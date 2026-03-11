@@ -44,6 +44,10 @@ def create_order(table_token: str, data: OrderCreate, db: Session = Depends(get_
 
     db.commit()
     db.refresh(order)
+    import asyncio
+    asyncio.create_task(
+        manager.broadcast({"type": "new_order", "order_id": order.id, "table": table.number})
+    )
     return _load_order(order.id, db)
 
 

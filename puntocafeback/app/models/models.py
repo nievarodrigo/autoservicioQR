@@ -89,3 +89,8 @@ class OrderItem(Base):
     @property
     def subtotal(self):
         return self.unit_price * self.quantity
+
+class PaymentMethod(str, enum.Enum):
+    cash = "cash"
+    digital = "digital"
+    card = "card"

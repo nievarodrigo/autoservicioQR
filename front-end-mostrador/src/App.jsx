@@ -73,6 +73,16 @@ export default function App() {
       setBell(table);
       setTimeout(() => setBell(null), 6000);
     },
+    onOrderStatusChanged: (order_id, status) => {
+      if (status === "delivered" || status === "cancelled") {
+        setOrders(prev => prev.filter(o => o.id !== order_id));
+      } else {
+        setOrders(prev => prev.map(o => o.id === order_id ? { ...o, status } : o));
+      }
+    },
+    onOrderPaymentChanged: (order_id, payment_status) => {
+      setOrders(prev => prev.map(o => o.id === order_id ? { ...o, payment_status } : o));
+    },
   });
 
   // ── Handlers ──────────────────────────────────────────────────────────────

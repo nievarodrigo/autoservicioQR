@@ -1,9 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { WS_URL } from "../utils/constants";
 
-export function useWebSocket({ onNewOrder, onBell }) {
+export function useWebSocket({ onNewOrder, onBell, onOrderStatusChanged, onOrderPaymentChanged }) {
   const [status, setStatus] = useState("connecting");
   const wsRef = useRef(null);
+  const cbRef = useRef({});
+
+  // Mantener callbacks actualizados sin recrear el WebSocket
+  useEffect(() => {
+    cbRef.current = { onNewOrder, onBell, onOrderStatusChanged, onOrderPaymentChanged };
+  });
 
   useEffect(() => {
     const connect = () => {
@@ -21,8 +27,11 @@ export function useWebSocket({ onNewOrder, onBell }) {
 
       ws.onmessage = (e) => {
         const msg = JSON.parse(e.data);
-        if (msg.type === "new_order") onNewOrder?.();
-        if (msg.type === "bell") onBell?.(msg.table);
+        const cb = cbRef.current;
+        if (msg.type === "new_order")            cb.onNewOrder?.();
+        if (msg.type === "bell")                 cb.onBell?.(msg.table);
+        if (msg.type === "order_status_changed") cb.onOrderStatusChanged?.(msg.order_id, msg.status);
+        if (msg.type === "order_payment_changed") cb.onOrderPaymentChanged?.(msg.order_id, msg.payment_status);
       };
     };
 

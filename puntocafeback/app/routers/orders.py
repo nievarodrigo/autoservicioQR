@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.models.models import Order, OrderItem, MenuItem, Table, OrderStatus
 from app.schemas.schemas import OrderCreate, OrderOut, OrderStatusUpdate, OrderPaymentUpdate
+from app.routers.ws import manager
 from typing import List
+import asyncio
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
@@ -44,7 +46,6 @@ def create_order(table_token: str, data: OrderCreate, db: Session = Depends(get_
 
     db.commit()
     db.refresh(order)
-    import asyncio
     asyncio.create_task(
         manager.broadcast({"type": "new_order", "order_id": order.id, "table": table.number})
     )
@@ -74,6 +75,9 @@ def update_order_status(order_id: int, data: OrderStatusUpdate, db: Session = De
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
     order.status = data.status
     db.commit()
+    asyncio.create_task(
+        manager.broadcast({"type": "order_status_changed", "order_id": order_id, "status": data.status.value})
+    )
     return _load_order(order_id, db)
 
 
@@ -84,6 +88,9 @@ def update_payment_status(order_id: int, data: OrderPaymentUpdate, db: Session =
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
     order.payment_status = data.payment_status
     db.commit()
+    asyncio.create_task(
+        manager.broadcast({"type": "order_payment_changed", "order_id": order_id, "payment_status": data.payment_status.value})
+    )
     return _load_order(order_id, db)
 
 

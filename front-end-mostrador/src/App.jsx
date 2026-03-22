@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import GlobalStyles   from "./components/GlobalStyles";
 import BellToast      from "./components/BellToast";
 import TicketModal    from "./components/TicketModal";
+import LoginScreen    from "./components/LoginScreen";
 import OrdersTab      from "./tabs/OrdersTab";
 import StockTab       from "./tabs/StockTab";
 import HistoryTab     from "./tabs/HistoryTab";
@@ -17,12 +18,34 @@ const TABS = [
 const ACTIVE_STATUSES = ["pending", "confirmed", "preparing", "ready"];
 
 export default function App() {
-  const [tab, setTab]       = useState("orders");
-  const [orders, setOrders] = useState([]);
+  const [authed, setAuthed]   = useState(() => !!localStorage.getItem("staff_token"));
+  const [tab, setTab]         = useState("orders");
+  const [orders, setOrders]   = useState([]);
   const [loading, setLoading] = useState(true);
-  const [bell, setBell]     = useState(null);
-  const [ticket, setTicket] = useState(null);
+  const [bell, setBell]       = useState(null);
+  const [ticket, setTicket]   = useState(null);
   const timerRef = useRef(null);
+
+  // Escuchar logout forzado (token expirado)
+  useEffect(() => {
+    const handler = () => setAuthed(false);
+    window.addEventListener("auth:logout", handler);
+    return () => window.removeEventListener("auth:logout", handler);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("staff_token");
+    setAuthed(false);
+  };
+
+  if (!authed) {
+    return (
+      <>
+        <GlobalStyles />
+        <LoginScreen onLogin={() => setAuthed(true)} />
+      </>
+    );
+  }
 
   // ── Cargar pedidos activos ─────────────────────────────────────────────────
   const loadOrders = useCallback(async () => {
@@ -109,6 +132,13 @@ export default function App() {
                 color: "white", padding: "6px 12px", borderRadius: 8, fontSize: 12,
               }}
             >↻ Actualizar</button>
+            <button
+              onClick={handleLogout}
+              style={{
+                background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)",
+                color: "rgba(255,255,255,0.6)", padding: "6px 12px", borderRadius: 8, fontSize: 12,
+              }}
+            >Salir</button>
           </div>
         </header>
 

@@ -1,12 +1,34 @@
 const API_BASE = "http://localhost:8000"; // cambiá por tu IP o URL de cloudflare
 
 export async function apiFetch(path, options = {}) {
+  const token = localStorage.getItem("staff_token");
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     ...options,
   });
+  if (res.status === 401) {
+    localStorage.removeItem("staff_token");
+    window.dispatchEvent(new Event("auth:logout"));
+    throw new Error("Sesión expirada");
+  }
   if (!res.ok) throw new Error(`Error ${res.status}`);
   return res.json();
+}
+
+export async function login(username, password) {
+  const res = await fetch(`${API_BASE}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  if (res.status === 401) throw new Error("Credenciales inválidas");
+  if (!res.ok) throw new Error(`Error ${res.status}`);
+  const data = await res.json();
+  localStorage.setItem("staff_token", data.access_token);
+  return data;
 }
 
 export const getOrders       = (status) => apiFetch(`/orders/${status ? `?status=${status}` : ""}`);
